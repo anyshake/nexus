@@ -18,13 +18,20 @@ import (
 func main() {
 	args := parseCommandLine()
 
-	conn, err := net.Dial("tcp", args.address)
+	connTimeout := time.Duration(args.timeout) * time.Second
+	_, connCancel := context.WithTimeout(context.Background(), connTimeout)
+	defer connCancel()
+
+	conn, err := net.DialTimeout("tcp", args.address, connTimeout)
 	if err != nil {
-		log.Fatalf("error connecting to server: %v", err)
+		log.Printf("error connecting to server: %v", err)
+		return
 	}
 	log.Printf("connected to server at %s", args.address)
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	shutdownCtx, shutdownCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer shutdownCancel()
+
 	fifoBuf := fifo.New[string](128)
 
 	go func(readInterval time.Duration) {
@@ -38,13 +45,13 @@ func main() {
 				line, err := reader.ReadString('\n')
 				if err != nil {
 					log.Printf("error reading from connection: %v", err)
-					cancel()
+					shutdownCancel()
 					return
 				}
 				if strings.HasPrefix(line, "$") {
 					_, _ = fifoBuf.Write(line)
 				}
-			case <-ctx.Done():
+			case <-shutdownCtx.Done():
 				log.Println("exiting from data packet reader")
 				timer.Stop()
 				conn.Close()
@@ -74,7 +81,7 @@ func main() {
 					seisComp3DaemonCallback(message)
 				}
 
-			case <-ctx.Done():
+			case <-shutdownCtx.Done():
 				log.Println("exiting from data packet decoder")
 				timer.Stop()
 				return
@@ -82,6 +89,6 @@ func main() {
 		}
 	}(500 * time.Millisecond)
 
-	<-ctx.Done()
+	<-shutdownCtx.Done()
 	log.Println("interrupt signal received, exiting...")
 }
