@@ -15,7 +15,7 @@ import (
 	"github.com/anyshake/nexus/message"
 )
 
-func seisComp3DaemonCallback(message message.Message) {
+func seisCompDaemonCallback(message message.Message) {
 	data := (*C.int)(unsafe.Pointer(&message.Data[0]))
 	sampleRate := C.int(message.SampleRate)
 	pTime := &C.struct_ptime{

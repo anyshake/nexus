@@ -78,7 +78,7 @@ func main() {
 						log.Printf("error decoding message: %v", err)
 						continue
 					}
-					seisComp3DaemonCallback(message)
+					seisCompDaemonCallback(message)
 				}
 
 			case <-shutdownCtx.Done():
