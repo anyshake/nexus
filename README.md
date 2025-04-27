@@ -12,7 +12,7 @@
     ```
 2. Build the Go application:
     ```bash
-    $ go build
+    $ CGO_ENABLED=1 go build
     ```
 3. Run the `nexus` application by specifying the address of the TCP forwarder service. This address can be obtained from the AnyShake Observer.
     ```bash
