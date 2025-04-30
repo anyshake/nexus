@@ -1,6 +1,6 @@
 # nexus
 
-⛩️ A plugin that can seamlessly link AnyShake products to SeisComP3.
+⛩️ A plugin that can seamlessly link AnyShake products to SeisComP.
 
 ## Getting Started
 
