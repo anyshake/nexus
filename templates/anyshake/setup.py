@@ -25,7 +25,7 @@ class SeedlinkPluginHandler:
         try:
             seedlink.param("sources.anyshake.proc")
         except:
-            seedlink.setParam("sources.anyshake.proc", "e_c111g")
+            seedlink.setParam("sources.anyshake.proc", "e_c1x1g_6ch_250hz")
 
         return None
 
