@@ -1,0 +1,35 @@
+From aa920bf6fb193d52eea51c18be3ffa6eba5adf3c Mon Sep 17 00:00:00 2001
+From: AnyShake Project <anyshake@senseplex.net>
+Date: Tue, 6 May 2025 03:27:50 +0000
+Subject: [PATCH] feat: Add anyshake_plugin
+
+---
+ plugins/CMakeLists.txt | 1 +
+ plugins/Makefile       | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/plugins/CMakeLists.txt b/plugins/CMakeLists.txt
+index db4fa9c..fa20677 100644
+--- a/plugins/CMakeLists.txt
++++ b/plugins/CMakeLists.txt
+@@ -10,6 +10,7 @@ IF ( NOT MACOSX )
+ 	SET(
+ 		_DIR_LIST 
+ 			${_DIR_LIST}
++			anyshake_plugin
+ 			caps_plugin
+ 			echopro_plugin
+ 			ewexport_plugin
+diff --git a/plugins/Makefile b/plugins/Makefile
+index cceb59c..c421e68 100644
+--- a/plugins/Makefile
++++ b/plugins/Makefile
+@@ -1,4 +1,4 @@
+-DIRS = serial_plugin chain_plugin sockplugin naqsplugin nrts_plugin \
++DIRS = anyshake_plugin serial_plugin chain_plugin sockplugin naqsplugin nrts_plugin \
+        q330plugin reftek_plugin ewexport_plugin scream_plugin wave24_plugin \
+        mseedscan_plugin mseedfifo_plugin fs_plugin win_plugin
+        
+-- 
+2.30.2
+

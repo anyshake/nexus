@@ -1,4 +1,4 @@
-module github.com/anyshake/nexus
+module github.com/anyshake/nexus/anyshake_plugin
 
 go 1.23.5
 

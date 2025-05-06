@@ -11,11 +11,9 @@ import (
 	"log"
 	"time"
 	"unsafe"
-
-	"github.com/anyshake/nexus/message"
 )
 
-func seisCompDaemonCallback(message message.Message) {
+func seisCompDaemonCallback(message Message) {
 	data := (*C.int)(unsafe.Pointer(&message.Data[0]))
 	sampleRate := C.int(message.SampleRate)
 	pTime := &C.struct_ptime{
@@ -34,5 +32,8 @@ func seisCompDaemonCallback(message message.Message) {
 	defer C.free(unsafe.Pointer(channel))
 
 	C.send_raw3(station, channel, pTime, C.int(0), C.int(100), data, sampleRate)
-	log.Printf("1 message sent, channel: %s, sample rate: %d Hz, time: %s", message.Channel, message.SampleRate, message.Time.Format(time.RFC3339Nano))
+	log.Printf(
+		"1 message sent, station %s, channel: %s, sample rate: %d Hz, time: %s",
+		message.Station, message.Channel, message.SampleRate, message.Time.Format(time.RFC3339Nano),
+	)
 }
