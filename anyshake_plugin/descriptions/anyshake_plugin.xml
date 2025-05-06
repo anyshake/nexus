@@ -9,20 +9,23 @@
                     Format: [host]:[port], e.g., 127.0.0.1:30000
                 </description>
             </parameter>
+
             <parameter name="timeout" type="int" default="10">
                 <description>
                     Connection timeout in seconds when attempting to reach the forwarder.
                 </description>
             </parameter>
-            <parameter name="verbose" type="boolean" default="false">
-                <description>
-                    Enable verbose logging.
-                </description>
-            </parameter>
+
             <parameter name="proc" type="string" default="e_c1x1g_6ch_250hz">
                 <description>
                     Name of the proc object (defined in streams.xml); used for processing
                     raw streams (streams submitted by a plugin as raw samples).
+                </description>
+            </parameter>
+
+            <parameter name="verbose" type="boolean" default="false">
+                <description>
+                    Enable verbose logging.
                 </description>
             </parameter>
         </configuration>

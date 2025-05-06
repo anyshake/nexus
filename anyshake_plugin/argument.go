@@ -16,8 +16,9 @@ func parseCommandLine() (args arguments) {
 
 	var verbose string
 	flag.StringVar(&verbose, "verbose", "false", "Enable verbose logging")
-	args.verbose = (verbose == "true")
 
 	flag.Parse()
+
+	args.verbose = (verbose == "true")
 	return args
 }
