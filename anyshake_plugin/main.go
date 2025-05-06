@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -12,8 +14,23 @@ import (
 	"time"
 )
 
+func sendMessage(ipcObj *SeedLinkIPC, message *Message) error {
+	if ipcObj == nil {
+		return errors.New("IPC instance is nil")
+	}
+	if message == nil {
+		return errors.New("message instance is nil")
+	}
+
+	station := fmt.Sprintf("%s.%s", message.Network, message.Station)
+	return ipcObj.SendRaw3(station, message.Channel, message.Time, 0, 100, message.Data)
+}
+
 func main() {
 	args := parseCommandLine()
+
+	ipcObj := NewSeedlinkIPC()
+	defer ipcObj.Close()
 
 	connTimeout := time.Duration(args.timeout) * time.Second
 	_, connCancel := context.WithTimeout(context.Background(), connTimeout)
@@ -52,7 +69,20 @@ func main() {
 					log.Printf("error decoding message: %v", err)
 					continue
 				}
-				sendMessage(message)
+
+				if err := sendMessage(ipcObj, &message); err != nil {
+					log.Printf("error sending message: %v", err)
+					return
+				}
+
+				if args.verbose {
+					log.Printf(
+						"%s.%s.%s.%s, %d SPS - %s",
+						message.Network, message.Station, message.Location, message.Channel,
+						message.SampleRate,
+						message.Time.Format(time.RFC3339Nano),
+					)
+				}
 			}
 		}
 	}

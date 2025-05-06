@@ -7,20 +7,27 @@ class SeedlinkPluginHandler:
     def __init__(self): pass
 
     def push(self, seedlink):
-        # Set default address
         try:
             seedlink.param('sources.anyshake.address')
         except:
             seedlink.setParam('sources.anyshake.address', '127.0.0.1:30000')
 
-        # Set default timeout
         try:
             seedlink.param('sources.anyshake.timeout')
         except:
             seedlink.setParam('sources.anyshake.timeout', 10)
 
-        # Use network.station as unique key
-        return seedlink.net + "." + seedlink.sta
+        try:
+            seedlink.param('sources.anyshake.verbose')
+        except:
+            seedlink.setParam('sources.anyshake.verbose', "false")
+
+        try:
+            seedlink.param("sources.anyshake.proc")
+        except:
+            seedlink.setParam("sources.anyshake.proc", "e_c111g")
+
+        return None
 
     def flush(self, seedlink):
         pass

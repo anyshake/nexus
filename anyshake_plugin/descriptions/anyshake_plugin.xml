@@ -1,24 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
-    <plugin name="anyshake">
-        <extends>seedlink</extends>
-        <description>Global options for the AnyShake plugin</description>
-        <configuration>
-            <group name="plugins">
-                <group name="anyshake">
-                    <parameter name="timeout" type="int" default="10">
-                        <description>
-                            Timeout value for the TCP connection to the AnyShake
-                            Observer forwarder, in seconds. If the connection
-                            cannot be established within this period, the plugin
-                            will retry later.
-                        </description>
-                    </parameter>
-                </group>
-            </group>
-        </configuration>
-    </plugin>
-
     <binding module="seedlink" name="anyshake" category="sources">
         <description>Receives seismic data from the AnyShake Observer TCP forwarder</description>
         <configuration>
@@ -31,6 +12,17 @@
             <parameter name="timeout" type="int" default="10">
                 <description>
                     Connection timeout in seconds when attempting to reach the forwarder.
+                </description>
+            </parameter>
+            <parameter name="verbose" type="boolean" default="false">
+                <description>
+                    Enable verbose logging.
+                </description>
+            </parameter>
+            <parameter name="proc" type="string" default="e_c1x1g_6ch_250hz">
+                <description>
+                    Name of the proc object (defined in streams.xml); used for processing
+                    raw streams (streams submitted by a plugin as raw samples).
                 </description>
             </parameter>
         </configuration>

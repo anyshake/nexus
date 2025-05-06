@@ -22,7 +22,7 @@ type Message struct {
 	Channel  string
 	Location string
 
-	Data     []int
+	Data     []int32
 	Checksum uint8
 }
 
@@ -56,9 +56,9 @@ func (m *Message) Parse() error {
 	m.Location = fields[2]
 	m.Channel = fields[3]
 	m.Time = time.UnixMilli(timestamp).UTC()
-	m.Data = lo.Map(fields[6:len(fields)-2], func(field string, _ int) int {
+	m.Data = lo.Map(fields[6:len(fields)-2], func(field string, _ int) int32 {
 		data, _ := strconv.ParseInt(field, 10, 32)
-		return int(data)
+		return int32(data)
 	})
 
 	return nil
