@@ -1,5 +1,5 @@
-BINDIR = ../../bin
-SRC = ../plugin.c
+BINDIR = .
+SRC = ../../libs/plugin/plugin.c
 OBJ = plugin.o
 
 CLIB = libplugin.a

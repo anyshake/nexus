@@ -1,7 +1,7 @@
 package main
 
 /*
-#cgo CFLAGS: -I ../
+#cgo CFLAGS: -I ../../libs/plugin
 #cgo LDFLAGS: -L ./ -lplugin
 #include <stdlib.h>
 #include "plugin.h"
@@ -13,7 +13,7 @@ import (
 	"unsafe"
 )
 
-func seisCompDaemonCallback(message Message) {
+func sendMessage(message Message) {
 	data := (*C.int)(unsafe.Pointer(&message.Data[0]))
 	sampleRate := C.int(message.SampleRate)
 	pTime := &C.struct_ptime{

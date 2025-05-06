@@ -25,6 +25,7 @@ func main() {
 		return
 	}
 	log.Printf("connected to server at %s", args.address)
+	defer conn.Close()
 
 	shutdownCtx, shutdownCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer shutdownCancel()
@@ -33,13 +34,16 @@ func main() {
 		select {
 		case <-shutdownCtx.Done():
 			log.Println("interrupt signal received, exiting...")
-			conn.Close()
 			return
 		default:
+			conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 			line, err := reader.ReadString('\n')
 			if err != nil {
+				if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+					log.Println("timed out when reading from connection")
+					continue
+				}
 				log.Printf("error reading from connection: %v", err)
-				shutdownCancel()
 				return
 			}
 			if strings.HasPrefix(line, "$") {
@@ -48,7 +52,7 @@ func main() {
 					log.Printf("error decoding message: %v", err)
 					continue
 				}
-				seisCompDaemonCallback(message)
+				sendMessage(message)
 			}
 		}
 	}
