@@ -8,6 +8,7 @@ package main
 */
 import "C"
 import (
+	"fmt"
 	"log"
 	"time"
 	"unsafe"
@@ -25,15 +26,16 @@ func sendMessage(message Message) {
 		usec:   C.int(message.Time.Nanosecond() / 1000),
 	}
 
-	station := C.CString(message.Station)
-	defer C.free(unsafe.Pointer(station))
+	networkStation := fmt.Sprintf("%s.%s", message.Network, message.Station)
+	networkStationCString := C.CString(networkStation)
+	defer C.free(unsafe.Pointer(networkStationCString))
 
-	channel := C.CString(message.Channel)
-	defer C.free(unsafe.Pointer(channel))
+	channelCString := C.CString(message.Channel)
+	defer C.free(unsafe.Pointer(channelCString))
 
-	C.send_raw3(station, channel, pTime, C.int(0), C.int(100), data, sampleRate)
+	C.send_raw3(networkStationCString, channelCString, pTime, C.int(0), C.int(100), data, sampleRate)
 	log.Printf(
 		"1 message sent, station %s, channel: %s, sample rate: %d Hz, time: %s",
-		message.Station, message.Channel, message.SampleRate, message.Time.Format(time.RFC3339Nano),
+		networkStation, message.Channel, message.SampleRate, message.Time.Format(time.RFC3339Nano),
 	)
 }
