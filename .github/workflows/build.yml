@@ -1,0 +1,97 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target:
+          - {
+              goos: "linux",
+              goarch: "amd64",
+              goarm: "",
+              gomips: "",
+              prefix: "linux-amd64",
+            }
+          - {
+              goos: "linux",
+              goarch: "arm64",
+              goarm: "",
+              gomips: "",
+              prefix: "linux-arm64",
+            }
+          - {
+              goos: "darwin",
+              goarch: "amd64",
+              goarm: "",
+              gomips: "",
+              prefix: "darwin-amd64",
+            }
+          - {
+              goos: "darwin",
+              goarch: "arm64",
+              goarm: "",
+              gomips: "",
+              prefix: "darwin-arm64",
+            }
+          - {
+              goos: "windows",
+              goarch: "amd64",
+              goarm: "",
+              gomips: "",
+              prefix: "windows-amd64",
+            }
+          - {
+              goos: "windows",
+              goarch: "arm64",
+              goarm: "",
+              gomips: "",
+              prefix: "windows-arm64",
+            }
+      fail-fast: false
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Go toolchain
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          check-latest: true
+
+      - name: Build Plugin
+        run: |
+          chmod 755 ./build.sh
+          ./build.sh "${{ matrix.target.goos }}" "${{ matrix.target.goarch }}" "${{ matrix.target.goarm }}" "${{ matrix.target.gomips }}" "${{ matrix.target.prefix }}"
+
+      - name: Create release digest
+        run: |
+          echo "Calculating release digest..."
+          sha256sum "build/${{ matrix.target.prefix }}.tar.gz" > "build/${{ matrix.target.prefix }}.dgst"
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.target.prefix }}"
+          path: |
+            build/${{ matrix.target.prefix }}.tar.gz
+            build/${{ matrix.target.prefix }}.dgst
+
+      - name: Create GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/${{ matrix.target.prefix }}*
+          tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true
