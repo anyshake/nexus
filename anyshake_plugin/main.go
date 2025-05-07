@@ -23,7 +23,8 @@ func sendMessage(ipcObj *SeedLinkIPC, message *Message) error {
 	}
 
 	station := fmt.Sprintf("%s.%s", message.Network, message.Station)
-	return ipcObj.SendRaw3(station, message.Channel, message.Time, 0, 100, message.Data)
+	channelId := fmt.Sprintf("CH%d", message.Index)
+	return ipcObj.SendRaw3(station, channelId, message.Time, 0, 100, message.Data)
 }
 
 func main() {

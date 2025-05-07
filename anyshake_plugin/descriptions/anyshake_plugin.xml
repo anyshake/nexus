@@ -12,11 +12,23 @@
 
             <parameter name="timeout" type="int" default="10">
                 <description>
-                    Connection timeout in seconds when attempting to reach the forwarder.
+                    Connection timeout in seconds when attempting to reach the forwarder endpoint.
                 </description>
             </parameter>
 
-            <parameter name="proc" type="string" default="e_c1x1g_6ch_250hz">
+            <parameter name="sampleRate" type="int" default="250">
+                <description>
+                    Sample rate of the stream received from the AnyShake Observer.
+                </description>
+            </parameter>
+
+            <parameter name="locationCode" type="string" default="00">
+                <description>
+                    Location code of the stream received from the AnyShake Observer.
+                </description>
+            </parameter>
+
+            <parameter name="proc" type="string" default="e_c1x1g_6ch">
                 <description>
                     Name of the proc object (defined in streams.xml); used for processing
                     raw streams (streams submitted by a plugin as raw samples).
