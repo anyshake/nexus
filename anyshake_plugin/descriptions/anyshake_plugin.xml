@@ -28,6 +28,18 @@
                 </description>
             </parameter>
 
+            <parameter name="channelPrefixVelocity" type="string" default="EH">
+                <description>
+                    Prefix of the velocity channels received from the AnyShake Observer.
+                </description>
+            </parameter>
+
+            <parameter name="channelPrefixAcceleration" type="string" default="EN">
+                <description>
+                    Prefix of the acceleration channels received from the AnyShake Observer.
+                </description>
+            </parameter>
+
             <parameter name="proc" type="string" default="e_c1x1g_6ch">
                 <description>
                     Name of the proc object (defined in streams.xml); used for processing

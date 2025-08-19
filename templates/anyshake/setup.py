@@ -28,6 +28,17 @@ class SeedlinkPluginHandler:
             seedlink.setParam('sources.anyshake.locationCode', '00')
 
         try:
+            seedlink.param('sources.anyshake.channelPrefixVelocity')
+        except:
+            seedlink.setParam('sources.anyshake.channelPrefixVelocity', 'EH')
+
+        try:
+            seedlink.param('sources.anyshake.channelPrefixAcceleration')
+        except:
+            seedlink.setParam(
+                'sources.anyshake.channelPrefixAcceleration', 'EN')
+
+        try:
             seedlink.param('sources.anyshake.verbose')
         except:
             seedlink.setParam('sources.anyshake.verbose', "false")
