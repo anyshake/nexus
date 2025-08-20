@@ -16,37 +16,6 @@
                 </description>
             </parameter>
 
-            <parameter name="sampleRate" type="int" default="250">
-                <description>
-                    Sample rate of the stream received from the AnyShake Observer.
-                </description>
-            </parameter>
-
-            <parameter name="locationCode" type="string" default="00">
-                <description>
-                    Location code of the stream received from the AnyShake Observer.
-                </description>
-            </parameter>
-
-            <parameter name="channelPrefixVelocity" type="string" default="EH">
-                <description>
-                    Prefix of the velocity channels received from the AnyShake Observer.
-                </description>
-            </parameter>
-
-            <parameter name="channelPrefixAcceleration" type="string" default="EN">
-                <description>
-                    Prefix of the acceleration channels received from the AnyShake Observer.
-                </description>
-            </parameter>
-
-            <parameter name="proc" type="string" default="e_c1x1g_6ch">
-                <description>
-                    Name of the proc object (defined in streams.xml); used for processing
-                    raw streams (streams submitted by a plugin as raw samples).
-                </description>
-            </parameter>
-
             <parameter name="verbose" type="boolean" default="false">
                 <description>
                     Enable verbose logging.

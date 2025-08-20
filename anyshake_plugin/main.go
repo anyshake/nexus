@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -14,23 +13,10 @@ import (
 	"time"
 )
 
-func sendMessage(ipcObj *SeedLinkIPC, message *Message) error {
-	if ipcObj == nil {
-		return errors.New("IPC instance is nil")
-	}
-	if message == nil {
-		return errors.New("message instance is nil")
-	}
-
-	station := fmt.Sprintf("%s.%s", message.Network, message.Station)
-	channelId := fmt.Sprintf("CH%d", message.Index)
-	return ipcObj.SendRaw3(station, channelId, message.Time, 0, 100, message.Data)
-}
-
 func main() {
 	args := parseCommandLine()
 
-	ipcObj := NewSeedlinkIPC()
+	ipcObj := NewSeedlinkPluginIPC()
 	defer ipcObj.Close()
 
 	connTimeout := time.Duration(args.timeout) * time.Second
@@ -48,7 +34,8 @@ func main() {
 	shutdownCtx, shutdownCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer shutdownCancel()
 
-	for reader := bufio.NewReader(conn); ; {
+	reader := bufio.NewReader(conn)
+	for sequenceNumber := 0; ; sequenceNumber++ {
 		select {
 		case <-shutdownCtx.Done():
 			log.Println("interrupt signal received, exiting...")
@@ -65,26 +52,44 @@ func main() {
 				return
 			}
 			if strings.HasPrefix(line, "$") {
-				message, err := NewMessage(line)
+				message, err := NewForwarderMessage(line)
 				if err != nil {
-					log.Printf("error decoding message: %v", err)
+					log.Printf("error decoding message from forwarder: %v", err)
 					continue
 				}
 
-				if err := sendMessage(ipcObj, &message); err != nil {
-					log.Printf("error sending message: %v", err)
+				if err := sendPluginMessage(ipcObj, message, sequenceNumber); err != nil {
+					log.Printf("error sending forwarder message to plugin: %v", err)
 					return
 				}
 
 				if args.verbose {
 					log.Printf(
-						"%s.%s.%s.%s, %d SPS - %s",
+						"[%s] - %s.%s.%s.%s (%d SPS)",
+						message.Time.Format(time.RFC3339Nano),
 						message.Network, message.Station, message.Location, message.Channel,
 						message.SampleRate,
-						message.Time.Format(time.RFC3339Nano),
 					)
 				}
 			}
 		}
 	}
+}
+
+func sendPluginMessage(ipcObj SeedLinkPluginIPC, message ForwarderMessage, sequenceNumber int) error {
+	time, station, network, location, channel, sampleRate, data := message.Time, message.Station, message.Network, message.Location, message.Channel, message.SampleRate, message.Data
+	packet := NewMiniSeedData(time, station, network, location, channel, sampleRate, data)
+	chunk, err := packet.EncodeChunk(sequenceNumber)
+	if err != nil {
+		return err
+	}
+
+	pluginStationName := fmt.Sprintf("%s.%s", message.Network, message.Station)
+	for _, data := range chunk {
+		if err := ipcObj.SendMSeed(pluginStationName, data); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

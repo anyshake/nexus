@@ -4,4 +4,3 @@ plugin $seedlink.source.id cmd="$seedlink.plugin_dir/anyshake_plugin -address $s
              timeout = 5
              start_retry = 30
              shutdown_wait = 10
-             proc = "$sources.anyshake.proc"

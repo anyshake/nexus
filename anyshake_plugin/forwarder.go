@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-type Message struct {
+type ForwarderMessage struct {
 	RawMessage string
 
 	Time       time.Time
@@ -27,15 +27,15 @@ type Message struct {
 	Checksum uint8
 }
 
-func NewMessage(msg string) (Message, error) {
-	m := Message{RawMessage: msg}
+func NewForwarderMessage(msg string) (ForwarderMessage, error) {
+	m := ForwarderMessage{RawMessage: msg}
 	if err := m.Parse(); err != nil {
-		return Message{}, fmt.Errorf("failed to parse message: %w", err)
+		return ForwarderMessage{}, fmt.Errorf("failed to parse message: %w", err)
 	}
 	return m, nil
 }
 
-func (m *Message) Parse() error {
+func (m *ForwarderMessage) Parse() error {
 	fields := strings.Split(m.RawMessage, ",")
 	if len(fields) < 8 {
 		return errors.New("message fields length is less than 8")
@@ -80,14 +80,14 @@ func (m *Message) Parse() error {
 	return nil
 }
 
-func (m *Message) extractDataArr(fields []string) []int32 {
+func (m *ForwarderMessage) extractDataArr(fields []string) []int32 {
 	return lo.Map(fields[7:len(fields)-1], func(field string, _ int) int32 {
 		data, _ := strconv.ParseInt(field, 10, 32)
 		return int32(data)
 	})
 }
 
-func (m *Message) calculateChecksum() uint8 {
+func (m *ForwarderMessage) calculateChecksum() uint8 {
 	var checksum uint8
 	for _, data := range m.Data {
 		bytes := (*[4]uint8)(unsafe.Pointer(&data))[:]
@@ -98,7 +98,7 @@ func (m *Message) calculateChecksum() uint8 {
 	return checksum
 }
 
-func (m *Message) extractChecksum() (uint8, error) {
+func (m *ForwarderMessage) extractChecksum() (uint8, error) {
 	idx := strings.LastIndex(m.RawMessage, "*")
 	if idx == -1 || idx+2 >= len(m.RawMessage) {
 		return 0, errors.New("checksum not found")
