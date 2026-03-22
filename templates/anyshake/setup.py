@@ -8,9 +8,10 @@ class SeedlinkPluginHandler:
 
     def push(self, seedlink):
         try:
-            seedlink.param('sources.anyshake.address')
+            address = seedlink.param('sources.anyshake.address')
         except:
-            seedlink.setParam('sources.anyshake.address', '127.0.0.1:30000')
+            address = '127.0.0.1:30000'
+            seedlink.setParam('sources.anyshake.address', address)
 
         try:
             seedlink.param('sources.anyshake.timeout')
@@ -22,7 +23,7 @@ class SeedlinkPluginHandler:
         except:
             seedlink.setParam('sources.anyshake.verbose', "false")
 
-        return None
+        return address
 
     def flush(self, seedlink):
         pass
