@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -44,18 +46,19 @@ type SeedLinkPluginIPC struct {
 func (s *SeedLinkPluginIPC) sendPacket(head *PluginPacketHeader, data []byte) error {
 	headerBuf := make([]byte, 60)
 
-	binary.LittleEndian.PutUint32(headerBuf[0:4], head.PackType)
+	// SeedLink reads the native C struct directly from the pipe.
+	binary.NativeEndian.PutUint32(headerBuf[0:4], head.PackType)
 	copy(headerBuf[4:14], head.Station[:])
 	copy(headerBuf[14:24], head.Channel[:])
-	binary.LittleEndian.PutUint32(headerBuf[24:28], head.Year)
-	binary.LittleEndian.PutUint32(headerBuf[28:32], head.Yday)
-	binary.LittleEndian.PutUint32(headerBuf[32:36], head.Hour)
-	binary.LittleEndian.PutUint32(headerBuf[36:40], head.Minute)
-	binary.LittleEndian.PutUint32(headerBuf[40:44], head.Second)
-	binary.LittleEndian.PutUint32(headerBuf[44:48], head.Usec)
-	binary.LittleEndian.PutUint32(headerBuf[48:52], uint32(head.UsecCorrection))
-	binary.LittleEndian.PutUint32(headerBuf[52:56], uint32(head.TimingQuality))
-	binary.LittleEndian.PutUint32(headerBuf[56:60], uint32(head.DataSize))
+	binary.NativeEndian.PutUint32(headerBuf[24:28], head.Year)
+	binary.NativeEndian.PutUint32(headerBuf[28:32], head.Yday)
+	binary.NativeEndian.PutUint32(headerBuf[32:36], head.Hour)
+	binary.NativeEndian.PutUint32(headerBuf[36:40], head.Minute)
+	binary.NativeEndian.PutUint32(headerBuf[40:44], head.Second)
+	binary.NativeEndian.PutUint32(headerBuf[44:48], head.Usec)
+	binary.NativeEndian.PutUint32(headerBuf[48:52], uint32(head.UsecCorrection))
+	binary.NativeEndian.PutUint32(headerBuf[52:56], uint32(head.TimingQuality))
+	binary.NativeEndian.PutUint32(headerBuf[56:60], uint32(head.DataSize))
 
 	if _, err := s.fd.Write(headerBuf); err != nil {
 		return err
@@ -69,26 +72,22 @@ func (s *SeedLinkPluginIPC) sendPacket(head *PluginPacketHeader, data []byte) er
 	return nil
 }
 
-func (s *SeedLinkPluginIPC) isLeap(y int) bool {
-	return (y%400 == 0) || (y%4 == 0 && y%100 != 0)
-}
-
-func (s *SeedLinkPluginIPC) ldoy(y, m int) int {
-	doy := [...]int{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365}
-	if s.isLeap(y) && m >= 3 {
-		return doy[m-1] + 1
-	}
-	return doy[m-1]
-}
-
-func (s *SeedLinkPluginIPC) mdy2dy(month, day, year int) int {
-	return s.ldoy(year, month) + day - 1
+func (head *PluginPacketHeader) setTime(t time.Time) {
+	t = t.UTC()
+	head.Year = uint32(t.Year())
+	head.Yday = uint32(t.YearDay())
+	head.Hour = uint32(t.Hour())
+	head.Minute = uint32(t.Minute())
+	head.Second = uint32(t.Second())
+	head.Usec = uint32(t.Nanosecond() / 1000)
 }
 
 func (s *SeedLinkPluginIPC) Close() {
 	_ = s.fd.Close()
 }
 
+// SendRaw3 uses a zero time to continue from the previous sample. A nonzero time
+// with no samples updates the stream clock without sending sample data.
 func (s *SeedLinkPluginIPC) SendRaw3(station, channel string, t time.Time, usecCorr, timingQuality int, data []int32) error {
 	const maxSamplesPerPacket = PLUGIN_MAX_DATA_BYTES / 4 // 4000 / 4 = 1000
 
@@ -96,7 +95,11 @@ func (s *SeedLinkPluginIPC) SendRaw3(station, channel string, t time.Time, usecC
 	total := len(data)
 	first := true
 
-	for sent < total {
+	if total == 0 && t.IsZero() {
+		return nil
+	}
+
+	for first || sent < total {
 		end := sent + maxSamplesPerPacket
 		if end > total {
 			end = total
@@ -107,26 +110,21 @@ func (s *SeedLinkPluginIPC) SendRaw3(station, channel string, t time.Time, usecC
 		copy(head.Station[:], station)
 		copy(head.Channel[:], channel)
 
-		if first {
+		if first && !t.IsZero() {
 			head.PackType = PLUGIN_RAW_TIME_PACKET
-			head.Year = uint32(t.Year())
-			head.Yday = uint32(s.mdy2dy(int(t.Month()), t.Day(), t.Year()))
-			head.Hour = uint32(t.Hour())
-			head.Minute = uint32(t.Minute())
-			head.Second = uint32(t.Second())
-			head.Usec = uint32(t.Nanosecond() / 1000)
+			head.setTime(t)
 			head.UsecCorrection = int32(usecCorr)
 			head.TimingQuality = int32(timingQuality)
-			first = false
 		} else {
 			head.PackType = PLUGIN_RAW_PACKET
 		}
+		first = false
 
 		head.DataSize = int32(len(chunk))
 
 		dataBytes := make([]byte, len(chunk)*4)
 		for i, v := range chunk {
-			binary.LittleEndian.PutUint32(dataBytes[i*4:(i+1)*4], uint32(v))
+			binary.NativeEndian.PutUint32(dataBytes[i*4:(i+1)*4], uint32(v))
 		}
 
 		if err := s.sendPacket(&head, dataBytes); err != nil {
@@ -137,6 +135,23 @@ func (s *SeedLinkPluginIPC) SendRaw3(station, channel string, t time.Time, usecC
 	}
 
 	return nil
+}
+
+// SendGap3 advances the stream clock by numberOfSamples without a payload.
+func (s *SeedLinkPluginIPC) SendGap3(station, channel string, usecCorr, timingQuality, numberOfSamples int) error {
+	if numberOfSamples < 0 || int64(numberOfSamples) > 1<<31-1 {
+		return fmt.Errorf("invalid gap sample count: %d", numberOfSamples)
+	}
+
+	var head PluginPacketHeader
+	copy(head.Station[:], station)
+	copy(head.Channel[:], channel)
+	head.PackType = PLUGIN_RAW_GAP_PACKET
+	head.UsecCorrection = int32(usecCorr)
+	head.TimingQuality = int32(timingQuality)
+	head.DataSize = int32(numberOfSamples)
+
+	return s.sendPacket(&head, nil)
 }
 
 func (s *SeedLinkPluginIPC) SendFlush3(station, channel string) error {
@@ -151,7 +166,7 @@ func (s *SeedLinkPluginIPC) SendFlush3(station, channel string) error {
 
 func (s *SeedLinkPluginIPC) SendMSeed(station string, data []byte) error {
 	if len(data) != PLUGIN_MSEED_SIZE {
-		return nil
+		return fmt.Errorf("invalid miniSEED packet size: got %d, want %d", len(data), PLUGIN_MSEED_SIZE)
 	}
 
 	var head PluginPacketHeader
@@ -164,7 +179,7 @@ func (s *SeedLinkPluginIPC) SendMSeed(station string, data []byte) error {
 
 func (s *SeedLinkPluginIPC) SendMSeed2(station, channel string, seq int, data []byte) error {
 	if len(data) != PLUGIN_MSEED_SIZE {
-		return nil
+		return fmt.Errorf("invalid miniSEED packet size: got %d, want %d", len(data), PLUGIN_MSEED_SIZE)
 	}
 
 	var head PluginPacketHeader
@@ -182,14 +197,12 @@ func (s *SeedLinkPluginIPC) SendLog3(station string, t time.Time, msg string) er
 	copy(head.Station[:], station)
 	head.PackType = PLUGIN_LOG_PACKET
 
-	head.Year = uint32(t.Year())
-	head.Yday = uint32(s.mdy2dy(int(t.Month()), t.Day(), t.Year()))
-	head.Hour = uint32(t.Hour())
-	head.Minute = uint32(t.Minute())
-	head.Second = uint32(t.Second())
-	head.Usec = uint32(t.Nanosecond() / 1000)
+	head.setTime(t)
 
-	data := []byte(msg)
+	if len(msg) > PLUGIN_MAX_MSG_SIZE-3 {
+		msg = msg[:PLUGIN_MAX_MSG_SIZE-3]
+	}
+	data := []byte(strings.TrimRight(msg, "\r\n") + "\r\n")
 	head.DataSize = int32(len(data))
 
 	return s.sendPacket(&head, data)

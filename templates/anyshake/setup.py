@@ -19,11 +19,17 @@ class SeedlinkPluginHandler:
             seedlink.setParam('sources.anyshake.timeout', 10)
 
         try:
+            realtime = seedlink.param('sources.anyshake.realtime')
+        except:
+            realtime = 'false'
+            seedlink.setParam('sources.anyshake.realtime', realtime)
+
+        try:
             seedlink.param('sources.anyshake.verbose')
         except:
             seedlink.setParam('sources.anyshake.verbose', "false")
 
-        return address
+        return (address, realtime)
 
     def flush(self, seedlink):
         pass

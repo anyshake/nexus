@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +12,31 @@ import (
 
 	"github.com/samber/lo"
 )
+
+func setForwarderRealtime(conn net.Conn, realtime bool, timeout time.Duration) error {
+	command := "AT+REALTIME=0\r\n"
+	if realtime {
+		command = "AT+REALTIME=1\r\n"
+	}
+
+	var deadline time.Time
+	if timeout > 0 {
+		deadline = time.Now().Add(timeout)
+	}
+	if err := conn.SetWriteDeadline(deadline); err != nil {
+		return err
+	}
+	n, err := io.WriteString(conn, command)
+	if err != nil {
+		return err
+	}
+	if n != len(command) {
+		return io.ErrShortWrite
+	}
+
+	// Observer sends no acknowledgement; sample data can already be arriving.
+	return conn.SetWriteDeadline(time.Time{})
+}
 
 type ForwarderMessage struct {
 	RawMessage string

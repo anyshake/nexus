@@ -31,6 +31,11 @@ func main() {
 	log.Printf("connected to server at %s", args.address)
 	defer conn.Close()
 
+	if err := setForwarderRealtime(conn, args.realtime, connTimeout); err != nil {
+		log.Printf("error setting forwarder transmission mode: %v", err)
+		return
+	}
+
 	shutdownCtx, shutdownCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer shutdownCancel()
 

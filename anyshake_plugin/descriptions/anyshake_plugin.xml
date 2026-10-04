@@ -16,6 +16,13 @@
                 </description>
             </parameter>
 
+            <parameter name="realtime" type="boolean" default="false">
+                <description>
+                    Request real-time transmission from AnyShake Observer.
+                    When disabled, use the normal forwarder stream.
+                </description>
+            </parameter>
+
             <parameter name="verbose" type="boolean" default="false">
                 <description>
                     Enable verbose logging.

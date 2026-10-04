@@ -43,7 +43,11 @@ func (m *MiniSeedData) chunkInt32Slice(data []int32, chunkSamples int) [][]int32
 }
 
 func (m *MiniSeedData) EncodeChunk(sequenceNumber int) ([][]byte, error) {
-	dataSpanMs := 1000 / m.SampleRate
+	if m.SampleRate <= 0 {
+		return nil, fmt.Errorf("invalid sample rate: %d", m.SampleRate)
+	}
+
+	startTime := time.UnixMilli(m.Timestamp).UTC()
 	var buf [][]byte
 
 	for i, c := range m.chunkInt32Slice(m.Data, MINISEED_CHUNK_SAMPLES) {
@@ -52,7 +56,8 @@ func (m *MiniSeedData) EncodeChunk(sequenceNumber int) ([][]byte, error) {
 			return nil, err
 		}
 
-		startTime := time.UnixMilli(m.Timestamp + int64(i*MINISEED_CHUNK_SAMPLES*dataSpanMs)).UTC()
+		// Calculate from the total sample offset to avoid accumulating rounding errors.
+		offset := time.Duration(i) * MINISEED_CHUNK_SAMPLES * time.Second / time.Duration(m.SampleRate)
 		if err := miniseed.Append(c, &mseedio.AppendOptions{
 			ChannelCode:    m.Channel,
 			StationCode:    m.Station,
@@ -60,7 +65,7 @@ func (m *MiniSeedData) EncodeChunk(sequenceNumber int) ([][]byte, error) {
 			NetworkCode:    m.Network,
 			SampleRate:     float64(m.SampleRate),
 			SequenceNumber: fmt.Sprintf("%06d", sequenceNumber),
-			StartTime:      startTime,
+			StartTime:      startTime.Add(offset),
 		}); err != nil {
 			return nil, err
 		}
